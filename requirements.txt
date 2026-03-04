@@ -1,0 +1,18 @@
+# Core
+transformers
+torch
+faiss-cpu
+groq
+pandas
+
+# Eval
+rouge-score
+evaluate
+
+# Utils
+python-dotenv
+
+# Langchain
+langchain
+langchain-text-splitters
+tiktoken

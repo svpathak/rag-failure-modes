@@ -1,0 +1,5 @@
+# .gitattributes
+* text=auto
+
+# Keep JSON data files as-is, no line ending conversion
+data/*.json binary

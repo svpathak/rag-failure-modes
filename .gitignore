@@ -1,0 +1,57 @@
+# Environment
+.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Vector DB — rebuild from data, don't commit
+chroma_db/
+
+# Results — commit selectively
+results/tmp/
+outputs/
+
+# Models — too large
+*.bin
+*.pt
+*.pth
+*.ckpt
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Conda
+.conda/
+conda-meta/
+envs/
+*.conda
+environment.lock.yml
