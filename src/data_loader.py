@@ -101,3 +101,11 @@ if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent))
     from config import TRAIN_JSON, DEV_JSON
     print(sample_records(build_qa_records(load_papers(TRAIN_JSON,DEV_JSON))))
+    # qa_records = build_qa_records(load_papers(TRAIN_JSON,DEV_JSON))
+    # print(len(qa_records))
+    # clean_records = [
+    #     r for r in qa_records
+    #     if not any("BIBREF" in ans or "TABREF" in ans
+    #             for ans in r["gold_answers"])
+    # ]
+    # print(len(clean_records))
