@@ -4,7 +4,7 @@ import pandas as pd
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from config import TOP_K, RESULTS_FILE
+from config import TOP_K, BASELINE_RESULTS_FILE
 
 
 def normalize(text):
@@ -84,7 +84,7 @@ def evaluate(qa_records, collection, tokenizer, model, llm_client):
     print(f"Exact Match : {avg_em:.4f}")
     print("=" * 50)
 
-    df.to_csv(RESULTS_FILE, index=False)
-    print(f"\nResults saved to {RESULTS_FILE}")
+    df.to_csv(BASELINE_RESULTS_FILE, index=False)
+    print(f"\nResults saved to {BASELINE_RESULTS_FILE}")
 
     return df

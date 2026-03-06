@@ -33,4 +33,4 @@ TEMPERATURE = 0.0
 # Evaluation
 EVAL_SAMPLE_SIZE = 100 # questions for Phase 1 baseline
 EVAL_RANDOM_SEED = 42
-RESULTS_FILE = OUTPUT_DIR / "results_baseline.csv"
+BASELINE_RESULTS_FILE  = OUTPUT_DIR / "results_baseline.csv"
