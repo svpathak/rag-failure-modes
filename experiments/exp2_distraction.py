@@ -6,38 +6,29 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from config import TRAIN_JSON, DEV_JSON, OUTPUT_DIR, EVAL_SAMPLE_SIZE, EVAL_RANDOM_SEED
 from src.data_loader import load_papers, build_qa_records, sample_records
-from src.chunker import chunk_papers
 from src.embedder import load_model
 from src.indexer import load_index
 from src.retriever import retrieve
 from src.generator import get_llm_client, generate
 from src.evaluator import compute_f1, compute_em
 
-def normalize(text):
-    text = text.lower().strip()
-    text = re.sub(r'\s+', ' ', text)
-    text = text.encode('ascii', errors='ignore').decode()
-    return text
 
-def classify_boundary_cut(gold_evidence_paragraphs, paper_chunks):
-    sorted_chunks = sorted(paper_chunks, key=lambda x: (x['section_idx'], x['chunk_index']))
+def token_overlap(text_a, text_b):
+    def tokenize(t):
+        return set(t.lower().strip().split())
+    a, b = tokenize(text_a), tokenize(text_b)
+    if not b:
+        return 0.0
+    return len(a & b) / len(b)
 
-    for para in gold_evidence_paragraphs:
-        if len(para) < 100:
-            continue
-        para_start = normalize(para[:50])
-        para_end = normalize(para[-50:])
 
-        for i, chunk in enumerate(sorted_chunks):
-            if para_start in normalize(chunk['text']):
-                if i < len(sorted_chunks) - 1:
-                    next_chunk = sorted_chunks[i + 1]
-                    same_section = next_chunk['section_idx'] == chunk['section_idx']
-                    consecutive = next_chunk['chunk_index'] == chunk['chunk_index'] + 1
-                    if same_section and consecutive and para_end in normalize(next_chunk['text']):
-                        return "boundary_cut"
+def evidence_retrieved(retrieved_chunks, gold_evidence_paragraphs, threshold=0.5):
+    for chunk in retrieved_chunks:
+        for para in gold_evidence_paragraphs:
+            if token_overlap(chunk['text'], para) >= threshold:
+                return True
+    return False
 
-    return "clean"
 
 if __name__ == "__main__":
     # --- 1. Data loading + filtering ---
@@ -51,35 +42,28 @@ if __name__ == "__main__":
     clean_records = sample_records(clean_records, EVAL_SAMPLE_SIZE, EVAL_RANDOM_SEED)
     print("Step 1: Done")
 
-    # --- 2. Build paper_id -> chunks lookup ---
-    all_chunks = chunk_papers(papers)
-    chunks_by_paper = {}
-    for chunk in all_chunks:
-        chunks_by_paper.setdefault(chunk['paper_id'], []).append(chunk)
-    print("Step 2: Done")
-
-    # --- 3. Load embedder + ChromaDB collection ---
+    # --- 2. Load embedder + ChromaDB collection ---
     tokenizer, model = load_model()
     collection = load_index()
     client = get_llm_client()
-    print("Step 3: Done")
+    print("Step 2: Done")
 
-    # --- 4. Main loop ---
+    # --- 3. Main loop ---
     results = []
     total = len(clean_records)
     for i, record in enumerate(clean_records):
         print(f"[{i+1}/{total}] {record['paper_id']} — {record['question'][:60]}")
-
-        paper_chunks = chunks_by_paper.get(record['paper_id'], [])
-        all_evidence = [para for annotator in record['gold_evidence'] for para in annotator]
-        condition = classify_boundary_cut(all_evidence, paper_chunks)
-        print(f"  condition: {condition}")
 
         retrieved_chunks = retrieve(
             record['question'], record['paper_id'],
             collection, tokenizer, model
         )
         print(f"  retrieved: {len(retrieved_chunks)} chunks")
+
+        # flatten gold evidence across annotators
+        all_evidence = [para for annotator in record['gold_evidence'] for para in annotator]
+        condition = "hit" if evidence_retrieved(retrieved_chunks, all_evidence) else "miss"
+        print(f"  condition: {condition}")
 
         predicted_answer = generate(record['question'], retrieved_chunks, client)
         print(f"  answer: {predicted_answer[:80]}")
@@ -104,15 +88,16 @@ if __name__ == "__main__":
             "f1": f1,
             "exact_match": em,
             "idk": idk,
-            "experiment": "exp1_boundary",
+            "experiment": "exp2_distraction",
             "condition": condition
         })
 
-    # --- 5. Write CSV ---
-    with open(OUTPUT_DIR / "exp1_boundary.csv", "w", newline="") as f:
+    # --- 4. Write CSV ---
+    with open(OUTPUT_DIR / "exp2_distraction.csv", "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=results[0].keys())
         writer.writeheader()
         writer.writerows(results)
+
     print(f"Done. {len(results)} records written.")
-    print(f"boundary_cut: {sum(1 for r in results if r['condition'] == 'boundary_cut')}")
-    print(f"clean: {sum(1 for r in results if r['condition'] == 'clean')}")
+    print(f"hit: {sum(1 for r in results if r['condition'] == 'hit')}")
+    print(f"miss: {sum(1 for r in results if r['condition'] == 'miss')}")
