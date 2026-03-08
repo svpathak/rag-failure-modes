@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config import TRAIN_JSON, DEV_JSON, EVAL_SAMPLE_SIZE, EVAL_RANDOM_SEED
+from config import TRAIN_JSON, DEV_JSON, EVAL_SAMPLE_SIZE, EVAL_RANDOM_SEED, OUTPUT_DIR
 from src.data_loader import load_papers, build_qa_records, sample_records
 from src.indexer import load_index
 from src.embedder import load_model
@@ -14,6 +14,15 @@ if __name__ == "__main__":
     print("Loading papers...")
     papers = load_papers(TRAIN_JSON, DEV_JSON)
     records = build_qa_records(papers)
+
+    # filter BIBREF/TABREF for clean comparable baseline
+    records = [
+        r for r in records
+        if not any("BIBREF" in ans or "TABREF" in ans
+                   for ans in r["gold_answers"])
+    ]
+    print(f"After BIBREF/TABREF filter: {len(records)} records")
+
     sample = sample_records(records, n=EVAL_SAMPLE_SIZE, seed=EVAL_RANDOM_SEED)
     print(f"Eval sample: {len(sample)} questions\n")
 
@@ -30,4 +39,5 @@ if __name__ == "__main__":
     print("Client loaded\n")
 
     print("Running evaluation...")
-    df = evaluate(sample, collection, tokenizer, model, llm_client)
+    df = evaluate(sample, collection, tokenizer, model, llm_client,
+                  output_path=OUTPUT_DIR / "results_baseline_clean.csv")

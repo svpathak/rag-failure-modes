@@ -37,7 +37,7 @@ def compute_em(prediction, gold_answers):
     return float(any(pred_norm == " ".join(normalize(g)) for g in gold_answers))
 
 
-def evaluate(qa_records, collection, tokenizer, model, llm_client):
+def evaluate(qa_records, collection, tokenizer, model, llm_client, output_path=None):
     from src.retriever import retrieve
     from src.generator import generate
 
@@ -84,7 +84,8 @@ def evaluate(qa_records, collection, tokenizer, model, llm_client):
     print(f"Exact Match : {avg_em:.4f}")
     print("=" * 50)
 
-    df.to_csv(BASELINE_RESULTS_FILE, index=False)
-    print(f"\nResults saved to {BASELINE_RESULTS_FILE}")
+    save_path = output_path if output_path else BASELINE_RESULTS_FILE
+    df.to_csv(save_path, index=False)
+    print(f"\nResults saved to {save_path}")
 
     return df
