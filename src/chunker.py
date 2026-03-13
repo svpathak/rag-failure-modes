@@ -6,8 +6,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from config import CHUNK_SIZE, CHUNK_OVERLAP
 
 
-def chunk_papers(papers):
-    token_splitter = TokenTextSplitter(chunk_overlap=CHUNK_OVERLAP, chunk_size=CHUNK_SIZE)
+def chunk_papers(papers, chunk_size=None, chunk_overlap=None):
+    size = chunk_size if chunk_size is not None else CHUNK_SIZE
+    overlap = chunk_overlap if chunk_overlap is not None else CHUNK_OVERLAP
+    token_splitter = TokenTextSplitter(chunk_overlap=overlap, chunk_size=size)
     
     chunks = []
     for paper in papers:

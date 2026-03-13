@@ -3,14 +3,12 @@ transformers
 torch
 faiss-cpu
 groq
-langchain-huggingface
 sentence-transformers
 pandas
 
 # Eval
 rouge-score
 evaluate
-ragas
 
 # Utils
 python-dotenv
@@ -19,4 +17,3 @@ python-dotenv
 langchain
 langchain-text-splitters
 tiktoken
-langchain-groq

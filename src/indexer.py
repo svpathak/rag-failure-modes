@@ -7,9 +7,10 @@ from config import CHROMA_DIR, CHROMA_COLLECTION, BATCH_SIZE
 from src.embedder import load_model, get_embeddings
 
 
-def build_index(chunks):
+def build_index(chunks, collection_name=None):
     client = chromadb.PersistentClient(path=str(CHROMA_DIR))
-    collection = client.get_or_create_collection(CHROMA_COLLECTION)
+    name = collection_name if collection_name is not None else CHROMA_COLLECTION
+    collection = client.get_or_create_collection(name)
 
     if collection.count() > 0:
         print(f"Index already exists with {collection.count()} chunks. Skipping.")
@@ -35,9 +36,10 @@ def build_index(chunks):
     return collection
 
 
-def load_index():
+def load_index(collection_name=None):
     client = chromadb.PersistentClient(path=str(CHROMA_DIR))
-    return client.get_collection(CHROMA_COLLECTION)
+    name = collection_name if collection_name is not None else CHROMA_COLLECTION
+    return client.get_collection(name)
 
 
 if __name__ == "__main__":

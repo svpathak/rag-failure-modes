@@ -1,10 +1,5 @@
 import sys
 import csv
-import os
-import ast
-import asyncio
-import functools
-import time
 from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
@@ -16,7 +11,7 @@ from src.embedder import load_model
 from src.indexer import load_index
 from src.retriever import retrieve
 from src.generator import get_llm_client, generate
-from src.evaluator import compute_f1, compute_em
+from src.evaluator import compute_f1
 
 
 def token_overlap(text_a, text_b):
@@ -55,35 +50,15 @@ def classify_hop_type(gold_evidence, sections):
     return "multi_hop" if labels.count("multi_hop") > labels.count("single_hop") else "single_hop"
 
 
-def build_ragas_llm():
-    from ragas.llms import LangchainLLMWrapper
-    from langchain_groq import ChatGroq
-
-    chat = ChatGroq(
-        model="llama-3.1-8b-instant",
-        api_key=os.environ["GROQ_API_KEY"],
-        max_tokens=2048
+def proxy_faithfulness(predicted_answer, retrieved_chunks):
+    """Fraction of answer tokens that appear in retrieved context — no LLM needed."""
+    answer_tokens = set(predicted_answer.lower().split())
+    context_tokens = set(
+        " ".join(c['text'] for c in retrieved_chunks).lower().split()
     )
-
-    original_create = chat.client.create
-
-    @functools.wraps(original_create)
-    def patched_create(*args, **kwargs):
-        kwargs.pop("n", None)
-        time.sleep(20)
-        return original_create(*args, **kwargs)
-
-    original_async_create = chat.async_client.create
-
-    async def patched_async_create(*args, **kwargs):
-        kwargs.pop("n", None)
-        await asyncio.sleep(20)
-        return await original_async_create(*args, **kwargs)
-
-    chat.client.create = patched_create
-    chat.async_client.create = patched_async_create
-
-    return LangchainLLMWrapper(chat)
+    if not answer_tokens:
+        return 0.0
+    return round(len(answer_tokens & context_tokens) / len(answer_tokens), 4)
 
 
 if __name__ == "__main__":
@@ -97,7 +72,7 @@ if __name__ == "__main__":
                    for ans in r["gold_answers"])
     ]
     clean_records = sample_records(clean_records, EVAL_SAMPLE_SIZE, EVAL_RANDOM_SEED)
-    print("Step 1: Done")
+    print(f"Step 1: Done - {len(clean_records)} records")
 
     # --- 2. Load embedder + ChromaDB collection ---
     tokenizer, model = load_model()
@@ -128,11 +103,11 @@ if __name__ == "__main__":
         best_gold = max(record['gold_answers'],
                         key=lambda a: compute_f1(predicted_answer, a))
         f1 = compute_f1(predicted_answer, best_gold)
-        em = compute_em(predicted_answer, best_gold)
         idk = predicted_answer.strip().lower().startswith("i don't know") or \
               predicted_answer.strip().lower().startswith("i cannot")
+        faith = proxy_faithfulness(predicted_answer, retrieved_chunks)
 
-        print(f"  f1: {f1:.3f} | em: {em} | idk: {idk}")
+        print(f"  f1: {f1:.3f} | idk: {idk} | faithfulness: {faith:.3f}")
 
         results.append({
             "question_id": record['question_id'],
@@ -140,76 +115,18 @@ if __name__ == "__main__":
             "question": record['question'],
             "gold_answer": best_gold,
             "predicted_answer": predicted_answer,
-            "retrieved_chunks_text": [c['text'] for c in retrieved_chunks],
             "retrieved_chunk_ids": str([c['chunk_id'] for c in retrieved_chunks]),
             "retrieved_section_names": str([c['section_name'] for c in retrieved_chunks]),
             "f1": f1,
-            "exact_match": em,
             "idk": idk,
+            "proxy_faithfulness": faith,
             "experiment": "exp3_multihop",
             "condition": condition
         })
 
     print("Step 3: Done")
 
-    # --- 4. RAGAS evaluation ---
-    print("Running RAGAS...")
-    try:
-        from ragas import evaluate as ragas_evaluate
-        from ragas.metrics import faithfulness, answer_relevancy, context_recall
-        from ragas.embeddings import LangchainEmbeddingsWrapper
-        from ragas.run_config import RunConfig
-        from langchain_huggingface import HuggingFaceEmbeddings
-        from datasets import Dataset
-
-        groq_llm = build_ragas_llm()
-
-        ragas_embeddings = LangchainEmbeddingsWrapper(
-            HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-        )
-
-        faithfulness.llm = groq_llm
-        answer_relevancy.llm = groq_llm
-        answer_relevancy.embeddings = ragas_embeddings
-        context_recall.llm = groq_llm
-
-        ragas_data = Dataset.from_list([{
-            "question": r["question"],
-            "answer": r["predicted_answer"],
-            "contexts": r["retrieved_chunks_text"],
-            "ground_truth": r["gold_answer"]
-        } for r in results])
-
-        ragas_scores = ragas_evaluate(
-            ragas_data,
-            metrics=[faithfulness, answer_relevancy, context_recall],
-            run_config=RunConfig(
-                max_workers=1,
-                timeout=120,
-                max_retries=0,
-                max_wait=60
-            )
-        )
-        scores_df = ragas_scores.to_pandas()
-
-        for i, row in scores_df.iterrows():
-            results[i]["ragas_faithfulness"] = round(row.get("faithfulness", 0.0), 4)
-            results[i]["ragas_answer_relevancy"] = round(row.get("answer_relevancy", 0.0), 4)
-            results[i]["ragas_context_recall"] = round(row.get("context_recall", 0.0), 4)
-
-        print("RAGAS: Done")
-
-    except Exception as e:
-        print(f"[WARN] RAGAS failed: {e}")
-        for r in results:
-            r["ragas_faithfulness"] = None
-            r["ragas_answer_relevancy"] = None
-            r["ragas_context_recall"] = None
-
-    # --- 5. Write CSV ---
-    for r in results:
-        r.pop("retrieved_chunks_text", None)
-
+    # --- 4. Write CSV ---
     with open(OUTPUT_DIR / "exp3_multihop.csv", "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=results[0].keys())
         writer.writeheader()
@@ -217,4 +134,15 @@ if __name__ == "__main__":
 
     print(f"Done. {len(results)} records written.")
     print(f"single_hop: {sum(1 for r in results if r['condition'] == 'single_hop')}")
-    print(f"multi_hop: {sum(1 for r in results if r['condition'] == 'multi_hop')}")
+    print(f"multi_hop:  {sum(1 for r in results if r['condition'] == 'multi_hop')}")
+
+    # --- 5. Quick summary ---
+    single = [r for r in results if r['condition'] == 'single_hop']
+    multi = [r for r in results if r['condition'] == 'multi_hop']
+    for group, name in [(single, 'single_hop'), (multi, 'multi_hop')]:
+        f1s = [r['f1'] for r in group]
+        faiths = [r['proxy_faithfulness'] for r in group]
+        print(f"\n{name} (n={len(group)})")
+        print(f"  avg F1: {sum(f1s)/len(f1s):.4f}")
+        print(f"  avg proxy_faith: {sum(faiths)/len(faiths):.4f}")
+        print(f"  IDK: {sum(1 for r in group if r['idk'])}")
