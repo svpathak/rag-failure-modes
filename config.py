@@ -9,8 +9,13 @@ CHROMA_DIR = ROOT_DIR / "chroma_db"
 TRAIN_JSON = DATA_DIR / "qasper-train-v0.3.json"
 DEV_JSON = DATA_DIR / "qasper-dev-v0.3.json"
 
+ANALYSIS_DIR = ROOT_DIR / "analysis"
+PLOTS_DIR = ANALYSIS_DIR / "plots"
+
 OUTPUT_DIR.mkdir(exist_ok=True)
 CHROMA_DIR.mkdir(exist_ok=True)
+ANALYSIS_DIR.mkdir(exist_ok=True)
+PLOTS_DIR.mkdir(exist_ok=True)
 
 # Chunking
 CHUNK_SIZE = 512
@@ -39,3 +44,11 @@ TEMPERATURE = 0.0
 EVAL_SAMPLE_SIZE = 200
 EVAL_RANDOM_SEED = 42
 BASELINE_RESULTS_FILE  = OUTPUT_DIR / "results_baseline.csv"
+
+# Evaluation thresholds
+ECS_THRESHOLD   = 0.5
+FAITH_THRESHOLD = 0.5
+CONDITION_TO_COLLECTION = {
+    str(c["chunk_size"]): c["collection_name"]
+    for c in CHUNK_CONDITIONS
+}

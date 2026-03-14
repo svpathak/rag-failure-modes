@@ -33,7 +33,6 @@ chroma_db/
 
 # Results — commit selectively
 results/tmp/
-outputs/
 
 # Models — too large
 *.bin

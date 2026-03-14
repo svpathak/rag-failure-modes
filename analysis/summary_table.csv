@@ -1,0 +1,10 @@
+experiment,condition,n,mean_f1,mean_proxy_faith,mean_ecs,high_faith_low_ecs_pct
+exp1_boundary,boundary_cut,40,0.0378,,0.6737,0.0
+exp1_boundary,clean,160,0.0754,,0.5501,0.0
+exp2_distraction,hit,134,0.0657,,0.8579,0.0
+exp2_distraction,miss,66,0.0921,,0.0,0.0
+exp3_multihop,multi_hop,18,0.1431,0.4967,0.4169,27.8
+exp3_multihop,single_hop,182,0.0676,0.5757,0.5904,20.9
+exp4_chunksize,256,200,0.1068,0.5083,0.4451,20.5
+exp4_chunksize,512,200,0.0744,0.5676,0.5748,21.5
+exp4_chunksize,1024,200,0.0556,0.442,0.6497,16.0
