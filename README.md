@@ -132,7 +132,7 @@ rag-stress-test/
 
 ---
 
-## Citation
+## Dataset
 
 ```
 @inproceedings{dasigi-etal-2021-dataset,
