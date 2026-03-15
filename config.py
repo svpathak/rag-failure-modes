@@ -22,7 +22,7 @@ CHUNK_SIZE = 512
 CHUNK_OVERLAP = 50
 CHUNK_CONDITIONS = [
     {"chunk_size": 256,  "chunk_overlap": 25,  "collection_name": "qasper_chunks_256"},
-    {"chunk_size": 512,  "chunk_overlap": 50,  "collection_name": "qasper_chunks"},      # existing
+    {"chunk_size": 512,  "chunk_overlap": 50,  "collection_name": "qasper_chunks"},
     {"chunk_size": 1024, "chunk_overlap": 100, "collection_name": "qasper_chunks_1024"},
 ]
 
