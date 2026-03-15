@@ -16,35 +16,35 @@ from src.indexer import load_index
 # Script-level config
 EXP_CONFIGS = [
     {
-        "name":          "exp1_boundary",
-        "input_csv":     OUTPUT_DIR / "exp1_boundary.csv",
-        "output_csv":    OUTPUT_DIR / "exp1_boundary_ecs.csv",
-        "encoding":      "latin-1",
-        "collection":    "qasper_chunks",
+        "name": "exp1_boundary",
+        "input_csv": OUTPUT_DIR / "exp1_boundary.csv",
+        "output_csv": OUTPUT_DIR / "exp1_boundary_ecs.csv",
+        "encoding": "latin-1",
+        "collection": "qasper_chunks",
         "condition_col": "condition",
     },
     {
-        "name":          "exp2_distraction",
-        "input_csv":     OUTPUT_DIR / "exp2_distraction.csv",
-        "output_csv":    OUTPUT_DIR / "exp2_distraction_ecs.csv",
-        "encoding":      "latin-1",
-        "collection":    "qasper_chunks",
+        "name": "exp2_distraction",
+        "input_csv": OUTPUT_DIR / "exp2_distraction.csv",
+        "output_csv": OUTPUT_DIR / "exp2_distraction_ecs.csv",
+        "encoding": "latin-1",
+        "collection": "qasper_chunks",
         "condition_col": "condition",
     },
     {
-        "name":          "exp3_multihop",
-        "input_csv":     OUTPUT_DIR / "exp3_multihop.csv",
-        "output_csv":    OUTPUT_DIR / "exp3_multihop_ecs.csv",
-        "encoding":      "utf-8",
-        "collection":    "qasper_chunks",
+        "name": "exp3_multihop",
+        "input_csv": OUTPUT_DIR / "exp3_multihop.csv",
+        "output_csv": OUTPUT_DIR / "exp3_multihop_ecs.csv",
+        "encoding": "utf-8",
+        "collection": "qasper_chunks",
         "condition_col": "condition",
     },
     {
-        "name":          "exp4_chunksize",
-        "input_csv":     OUTPUT_DIR / "exp4_chunksize.csv",
-        "output_csv":    OUTPUT_DIR / "exp4_chunksize_ecs.csv",
-        "encoding":      "utf-8",
-        "collection":    None,
+        "name": "exp4_chunksize",
+        "input_csv": OUTPUT_DIR / "exp4_chunksize.csv",
+        "output_csv": OUTPUT_DIR / "exp4_chunksize_ecs.csv",
+        "encoding": "utf-8",
+        "collection": None,
         "condition_col": "condition",
     },
 ]
@@ -68,7 +68,7 @@ def flatten_gold_evidence(gold_evidence_lol):
 
 
 def token_recall(gold_para, chunk_text):
-    gold_tokens  = set(gold_para.lower().split())
+    gold_tokens = set(gold_para.lower().split())
     chunk_tokens = set(chunk_text.lower().split())
     if not gold_tokens:
         return 0.0
@@ -332,9 +332,8 @@ fig, ax = plt.subplots(figsize=(10, 5))
 x = range(len(summary_df))
 x_labels = [f"{r['experiment']}\n[{r['condition']}]" for _, r in summary_df.iterrows()]
 
-ax.bar(x, summary_df["mean_ecs"],        color="#2196F3", alpha=0.8, label="mean ECS")
-ax.bar(x, summary_df["mean_proxy_faith"], color="#FF9800", alpha=0.5, label="mean proxy_faith",
-       width=0.4)
+ax.bar(x, summary_df["mean_ecs"], color="#2196F3", alpha=0.8, label="mean ECS")
+ax.bar(x, summary_df["mean_proxy_faith"], color="#FF9800", alpha=0.5, label="mean proxy_faith", width=0.4)
 ax.set_xticks(list(x))
 ax.set_xticklabels(x_labels, fontsize=8)
 ax.set_ylabel("Score")
@@ -349,10 +348,10 @@ print(f"  ecs_by_condition_all_exps.png saved")
 # Plot: F1 vs ECS scatter across all experiments
 fig, ax = plt.subplots(figsize=(8, 6))
 exp_colors = {
-    "exp1_boundary":    "#9C27B0",
+    "exp1_boundary": "#9C27B0",
     "exp2_distraction": "#2196F3",
-    "exp3_multihop":    "#F44336",
-    "exp4_chunksize":   "#4CAF50",
+    "exp3_multihop": "#F44336",
+    "exp4_chunksize": "#4CAF50",
 }
 for name, (df, _) in dataframes.items():
     ax.scatter(
