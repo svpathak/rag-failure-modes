@@ -51,7 +51,6 @@ def classify_hop_type(gold_evidence, sections):
 
 
 def proxy_faithfulness(predicted_answer, retrieved_chunks):
-    """Fraction of answer tokens that appear in retrieved context — no LLM needed."""
     answer_tokens = set(predicted_answer.lower().split())
     context_tokens = set(
         " ".join(c['text'] for c in retrieved_chunks).lower().split()
