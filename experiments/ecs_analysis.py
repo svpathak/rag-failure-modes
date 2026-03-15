@@ -13,7 +13,6 @@ from config import (
 from src.data_loader import load_papers, build_qa_records
 from src.indexer import load_index
 
-# Script-level config
 EXP_CONFIGS = [
     {
         "name": "exp1_boundary",
@@ -58,7 +57,6 @@ def load_csv_with_fallback(path, primary_enc="utf-8", fallback_enc="latin-1"):
 
 
 def flatten_gold_evidence(gold_evidence_lol):
-    """Flatten list-of-lists (one per annotator), deduplicate, strip blanks."""
     return list({
         para
         for annotator in gold_evidence_lol
