@@ -1,7 +1,3 @@
-# experiments/ecs_analysis.py
-# Phase 3 - Full ECS analysis pipeline (Tasks 1–5)
-# Run from project root: python experiments/ecs_analysis.py
-
 import sys
 import ast
 import pandas as pd
