@@ -43,7 +43,6 @@ TEMPERATURE = 0.0
 # Evaluation
 EVAL_SAMPLE_SIZE = 200
 EVAL_RANDOM_SEED = 42
-BASELINE_RESULTS_FILE  = OUTPUT_DIR / "results_baseline.csv"
 
 # Evaluation thresholds
 ECS_THRESHOLD   = 0.5

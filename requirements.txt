@@ -1,14 +1,10 @@
 # Core
+numpy
 transformers
 torch
-faiss-cpu
 groq
-sentence-transformers
+chromadb
 pandas
-
-# Eval
-rouge-score
-evaluate
 
 # Utils
 python-dotenv
@@ -17,7 +13,6 @@ matplotlib
 # Langchain
 langchain
 langchain-text-splitters
-tiktoken
 
 # UI
 streamlit

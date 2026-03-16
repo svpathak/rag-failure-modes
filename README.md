@@ -12,7 +12,7 @@ Standard RAG evaluation measures whether a generated answer is grounded in retri
 
 ## Key Findings
 
-- **21.5%** of baseline responses appear faithful (token-overlap > 0.5) but retrieved wrong context (ECS < 0.5)
+- **21.5%** of responses in the 512-token condition appear faithful (token-overlap > 0.5) but retrieved wrong context (ECS < 0.5)
 - **Chunk boundary cuts** cause confident wrong answers rather than abstentions - a harder-to-detect failure mode than IDK responses
 - **Multi-hop queries** show 27.8% silent failure rate vs 20.9% for single-section queries
 - **Larger chunks improve retrieval coverage (ECS) but degrade generation faithfulness** - 512 tokens is the sweet spot on QASPER
@@ -24,7 +24,6 @@ Standard RAG evaluation measures whether a generated answer is grounded in retri
 
 | experiment | condition | n | mean_f1 | mean_proxy_faith | mean_ecs | high_faith_low_ecs_pct |
 |---|---|---|---|---|---|---|
-| baseline | clean_512 | 100 | 0.2077 | - | - | - |
 | exp1_boundary | boundary_cut | 40 | 0.0378 | - | 0.6737 | - |
 | exp1_boundary | clean | 160 | 0.0754 | - | 0.5501 | - |
 | exp2_distraction | hit | 134 | 0.0657 | - | 0.8579 | - |
@@ -35,7 +34,7 @@ Standard RAG evaluation measures whether a generated answer is grounded in retri
 | exp4_chunksize | 512 | 200 | 0.0744 | 0.5676 | 0.5748 | 21.5% |
 | exp4_chunksize | 1024 | 200 | 0.0556 | 0.4420 | 0.6497 | 16.0% |
 
-*Exp 1 and Exp 2 have no proxy_faithfulness column; high_faith_low_ecs_pct shows 0.0 for these as an artifact of missing data, not a real finding.*
+*Exp 1 and Exp 2 have no proxy_faithfulness column; high_faith_low_ecs_pct shows 0.0 due to missing data.*
 
 ---
 
@@ -104,10 +103,6 @@ rag-stress-test/
   - exp3_multihop_ecs.csv
   - exp4_chunksize.csv
   - exp4_chunksize_ecs.csv
-  - results_baseline.csv
-  - results_baseline_clean.csv
-- scripts/
-  - run_eval.py
 - src/
   - __init__.py
   - chunker.py
@@ -127,7 +122,8 @@ rag-stress-test/
 ## Caveats
 
 - Multi-hop experiment (Exp 3) has n=18 multi-hop questions. The 27.8% silent failure rate is directionally consistent with the hypothesis but should not be treated as a definitive estimate.
-- Phase 2 absolute F1 values are lower than baseline due to BIBREF filtering and sampling variance. Within-experiment comparisons are the valid unit of analysis, not cross-experiment F1.
+- All four experiments run the same core pipeline with no modifications. Conditions within each experiment are post-hoc classifications of natural outcomes, not synthetic injections. Each experiment ran in a separate API session; cross-experiment F1 comparisons are not meaningful due to LLM non-determinism across sessions. Within-experiment condition comparisons are the valid unit of analysis.
+- ECS uses whitespace tokenization rather than the tiktoken tokenizer used for chunking. This is consistent within experiments but slightly inflates recall numbers due to punctuation handling.
 - ECS threshold of 0.5 for classifying silent failures is reasonable but arbitrary. The finding is robust to small threshold changes but the exact percentage shifts.
 
 ---
