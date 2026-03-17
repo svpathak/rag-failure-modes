@@ -74,6 +74,8 @@ pip install streamlit pandas matplotlib
 streamlit run demo/app.py
 ```
 
+Live Demo Link: https://rag-failure-modes.streamlit.app/
+
 ---
 
 ## Project Structure
