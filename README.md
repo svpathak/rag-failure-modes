@@ -1,4 +1,4 @@
-# Stress-Testing Long-Document RAG on Multi-Section Reasoning Tasks
+# Diagnosing RAG Failure Modes on Long-Document QA
 
 Empirical study of RAG failure modes on long-document multi-section QA, with a retrieval-grounded evaluation metric (ECS) that detects silent failures standard metrics miss.
 
@@ -6,7 +6,7 @@ Empirical study of RAG failure modes on long-document multi-section QA, with a r
 
 ## Abstract
 
-Standard RAG evaluation measures whether a generated answer is grounded in retrieved context - but not whether the retrieved context was correct in the first place. This project stress-tests a fixed-size chunking RAG pipeline on QASPER (NLP research paper QA) across four controlled experiments: chunk boundary fragmentation, retrieval distraction, multi-hop reasoning, and chunk-size sensitivity. A custom metric - Evidence Coverage Score (ECS) - is introduced to measure retrieval quality against gold evidence annotations. Results show that token-overlap faithfulness scores remain above 0.5 in 21.5% of cases where gold evidence was never retrieved, a failure class that standard metrics cannot detect.
+Standard RAG evaluation measures whether a generated answer is grounded in retrieved context - but not whether the retrieved context was correct in the first place. This project diagnoses failure modes in a fixed-size chunking RAG pipeline on QASPER (NLP research paper QA) across four controlled experiments: chunk boundary fragmentation, retrieval distraction, multi-hop reasoning, and chunk-size sensitivity. A custom metric - Evidence Coverage Score (ECS) - is introduced to measure retrieval quality against gold evidence annotations. Results show that token-overlap faithfulness scores remain above 0.5 in 21.5% of cases where gold evidence was never retrieved, a failure class that standard metrics cannot detect.
 
 ---
 
@@ -68,7 +68,7 @@ Metrics    : Token F1, proxy_faithfulness (token overlap), ECS (gold para recall
 The demo is a pre-computed results explorer. It loads CSVs from `outputs/` and `analysis/` - no model loading, no ChromaDB queries, no environment setup beyond the packages below.
 
 ```bash
-git clone https://github.com/svpathak/rag-stress-test
+git clone https://github.com/svpathak/rag-failure-modes
 cd rag-stress-test
 pip install streamlit pandas matplotlib
 streamlit run demo/app.py
@@ -79,7 +79,7 @@ streamlit run demo/app.py
 ## Project Structure
 
 ```
-rag-stress-test/
+rag-failure-modes/
 - analysis/
   - summary_table.csv
   - plots/
@@ -123,7 +123,7 @@ rag-stress-test/
 
 - Multi-hop experiment (Exp 3) has n=18 multi-hop questions. The 27.8% silent failure rate is directionally consistent with the hypothesis but should not be treated as a definitive estimate.
 - All four experiments run the same core pipeline with no modifications. Conditions within each experiment are post-hoc classifications of natural outcomes, not synthetic injections. Each experiment ran in a separate API session; cross-experiment F1 comparisons are not meaningful due to LLM non-determinism across sessions. Within-experiment condition comparisons are the valid unit of analysis.
-- ECS uses whitespace tokenization rather than the tiktoken tokenizer used for chunking. This is consistent within experiments but slightly inflates recall numbers due to punctuation handling.
+- ECS uses whitespace tokenization (.split()) rather than the tiktoken tokenizer used for chunking. This is consistent within experiments but slightly inflates recall numbers due to punctuation handling.
 - ECS threshold of 0.5 for classifying silent failures is reasonable but arbitrary. The finding is robust to small threshold changes but the exact percentage shifts.
 
 ---
