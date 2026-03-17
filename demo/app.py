@@ -1,18 +1,13 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 import numpy as np
 
 st.set_page_config(
-    page_title="RAG Stress-Test Explorer",
+    page_title="RAG Failure Modes Explorer",
     page_icon="🔬",
     layout="wide",
 )
-
-# =============================================
-# Data loading
-# =============================================
 
 @st.cache_data
 def load_data():
@@ -32,10 +27,6 @@ EXP_MAP = {
     "Exp 4 - Chunk Size": exp4,
 }
 
-# =============================================
-# Sidebar navigation
-# =============================================
-
 st.sidebar.title("Navigation")
 view = st.sidebar.radio(
     "View",
@@ -45,15 +36,11 @@ view = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.caption(
-    "Exploring pre-computed results from 4 stress-test experiments.  \n"
+    "Exploring pre-computed results from 4 experiments on RAG failure modes.  \n"
     "No API keys or model loading required."
 )
 
-# =============================================
-# Helper: coloured metric badges
-# =============================================
-
-def metric_badge(label, value, good_thresh = 0.5):
+def metric_badge(label: str, value: float, good_thresh: float = 0.5) -> str:
     colour = "#2ecc71" if value >= good_thresh else "#e74c3c"
     return (
         f'<span style="background:{colour};color:white;padding:2px 8px;'
@@ -66,14 +53,14 @@ def metric_badge(label, value, good_thresh = 0.5):
 # =============================================
 
 if view == "📊 Project Overview":
-    st.title("Stress-Testing Long-Document RAG on Multi-Section Reasoning Tasks")
+    st.title("Diagnosing RAG Failure Modes on Long-Document QA")
     st.markdown(
         """
-        This project empirically measures how a standard RAG pipeline fails on
+        This project empirically diagnoses failure modes in a standard RAG pipeline on
         **QASPER** - a dataset of NLP research-paper QA pairs that require reading
-        across multiple document sections. Four controlled experiments stress-test
-        chunk boundary fragmentation, retrieval distraction, multi-hop reasoning,
-        and chunk-size sensitivity. A custom retrieval-grounded metric -
+        across multiple document sections. Four experiments examine chunk boundary
+        fragmentation, retrieval distraction, multi-hop reasoning, and chunk-size
+        sensitivity. A custom retrieval-grounded metric -
         **Evidence Coverage Score (ECS)** - detects silent failures that standard
         token-overlap faithfulness scores miss.
         """
@@ -81,21 +68,21 @@ if view == "📊 Project Overview":
 
     st.markdown("---")
 
-    # == Key stat callout boxes ==
     col1, col2, col3 = st.columns(3)
     col1.metric(
-        label="Baseline Token F1 (512-token, clean)",
-        value="0.2077",
+        label="Silent Failure Rate - 512-token condition",
+        value="21.5%",
+        help="faith > 0.5 AND ECS < 0.5, exp4 512-token condition",
     )
     col2.metric(
-        label="Silent Failure Rate - Baseline",
-        value="21.5%",
-        help="faith > 0.5 AND ECS < 0.5 on 512-token clean questions",
-    )
-    col3.metric(
         label="Silent Failure Rate - Multi-hop",
         value="27.8%",
         help="faith > 0.5 AND ECS < 0.5, multi-hop condition (Exp 3)",
+    )
+    col3.metric(
+        label="IDK rate drop under boundary cuts",
+        value="31.9% to 12.5%",
+        help="Clean condition vs boundary-cut condition (Exp 1)",
     )
 
     st.markdown("---")
@@ -107,7 +94,6 @@ if view == "📊 Project Overview":
     st.markdown("---")
     st.subheader("Mean ECS vs Mean Faithfulness by Condition")
 
-    # Filter summary to rows that have both metrics (exp3 + exp4)
     plot_df = summary.dropna(subset=["mean_proxy_faith"]).copy()
 
     if plot_df.empty:
@@ -138,8 +124,8 @@ if view == "📊 Project Overview":
     st.markdown(
         """
         **Reading the chart:** ECS and faithfulness move in *opposite directions* as
-        chunk size grows (Exp 4). Larger chunks improve retrieval coverage (ECS ↑)
-        but hurt generation faithfulness (faith ↓). 512 tokens is the sweet spot on
+        chunk size grows (Exp 4). Larger chunks improve retrieval coverage (ECS up)
+        but hurt generation faithfulness (faith down). 512 tokens is the sweet spot on
         both dimensions for QASPER.
         """
     )
@@ -147,7 +133,6 @@ if view == "📊 Project Overview":
 # =============================================
 # VIEW 2 - Question Explorer
 # =============================================
-
 elif view == "🔍 Question Explorer":
     st.title("Question Explorer")
     st.caption("Browse individual questions across all four experiments.")
@@ -168,13 +153,11 @@ elif view == "🔍 Question Explorer":
 
     st.markdown(f"**{len(df_view)} questions** in *{exp_choice} / {cond_choice}*")
 
-    # Build display table
     display_cols = ["question", "f1", "ecs"]
     if has_faith:
         display_cols.append("proxy_faithfulness")
     display_cols.append("idk")
 
-    # Truncate question for table legibility
     df_table = df_view[display_cols].copy()
     df_table["question"] = df_table["question"].str[:90] + "…"
 
@@ -226,7 +209,6 @@ elif view == "🔍 Question Explorer":
 # =============================================
 # VIEW 3 - Silent Failure Cases
 # =============================================
-
 elif view == "🔴 Silent Failure Cases":
     st.title("Cases Where the System Appears Faithful But Retrieved Wrong Context")
     st.markdown(
@@ -244,11 +226,9 @@ elif view == "🔴 Silent Failure Cases":
 
     st.markdown("---")
 
-    # Filter silent failures from exp3
     sf_mask = (exp3["proxy_faithfulness"] > 0.5) & (exp3["ecs"] < 0.5)
-    df_sf   = exp3[sf_mask].reset_index(drop=True)
+    df_sf = exp3[sf_mask].reset_index(drop=True)
 
-    # Summary stats
     total_exp3 = len(exp3)
     sf_count = len(df_sf)
 
@@ -272,7 +252,6 @@ elif view == "🔴 Silent Failure Cases":
 
     st.markdown("---")
 
-    # == Scatter plot - the centrepiece ==
     st.subheader("Faithfulness vs ECS - Silent Failure Quadrant")
 
     cond_vals = exp3["condition"].unique().tolist()
@@ -298,29 +277,23 @@ elif view == "🔴 Silent Failure Cases":
     # Highlight the silent failure quadrant
     ax.axvline(x=0.5, color="grey", linestyle="--", linewidth=0.8, alpha=0.7)
     ax.axhline(y=0.5, color="grey", linestyle="--", linewidth=0.8, alpha=0.7)
-    ax.add_patch(
-        mpatches.FancyArrowPatch(
-            posA=(0, 0), posB=(0, 0),  # dummy; use Rectangle instead
-        )
-    )
     ax.fill_between(
         [0.5, 1.0], [0, 0], [0.5, 0.5],
         color="#e74c3c", alpha=0.07, label="Silent failure zone",
         zorder=0,
     )
 
-    ax.set_xlabel("Proxy Faithfulness  (answer → context overlap)", fontsize=11)
-    ax.set_ylabel("ECS  (gold evidence recall)", fontsize=11)
+    ax.set_xlabel("Proxy Faithfulness (answer-to-context overlap)", fontsize=11)
+    ax.set_ylabel("ECS (gold evidence recall)", fontsize=11)
     ax.set_title("Faithfulness vs ECS - Exp 3 (multi-hop vs single-hop)", fontsize=12)
     ax.set_xlim(-0.02, 1.02)
     ax.set_ylim(-0.02, 1.02)
     ax.legend(fontsize=9)
     ax.grid(alpha=0.25)
 
-    # Annotate the danger quadrant
     ax.text(
         0.76, 0.05,
-        "⬆ Looks faithful\n✗ Wrong context",
+        "Looks faithful\nWrong context",
         fontsize=8.5, color="#c0392b",
         ha="center", style="italic",
     )
@@ -345,7 +318,7 @@ elif view == "🔴 Silent Failure Cases":
         st.info("No silent failure cases found with the current threshold (faith > 0.5, ECS < 0.5).")
     else:
         browse_cols = ["condition", "question", "proxy_faithfulness", "ecs", "f1"]
-        df_browse = df_sf[browse_cols].copy()
+        df_browse   = df_sf[browse_cols].copy()
         df_browse["question"] = df_browse["question"].str[:90] + "…"
 
         sel = st.dataframe(
