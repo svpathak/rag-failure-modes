@@ -69,7 +69,7 @@ The demo is a pre-computed results explorer. It loads CSVs from `outputs/` and `
 
 ```bash
 git clone https://github.com/svpathak/rag-failure-modes
-cd rag-stress-test
+cd rag-failure-modes
 pip install streamlit pandas matplotlib
 streamlit run demo/app.py
 ```
